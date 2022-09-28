@@ -1,11 +1,11 @@
 [package]
-name = "git-extra"
-version = "0.1.0"
+name = "git_extra"
+version = "1.0.0"
 edition = "2021"
 authors = ["John Lyon-Smith <john@lyon-smith.org>"]
 readme = "README.md"
-description = "A tool for updating project version numbers"
-repository = "https://github.com/jlyonsmith/stampver-rs"
+description = "An extra useful set of Git related commands."
+repository = "https://github.com/jlyonsmith/git_extra_rs"
 keywords = ["git", "command-line", "development", "browse"]
 categories = ["command-line-utilities", "development-tools"]
 license = "Unlicense"
@@ -13,6 +13,9 @@ license = "Unlicense"
 [dependencies]
 clap = { version = "3.2.22", features = ["derive"] }
 colored = "2.0.0"
+lazy_static = "1.4.0"
+opener = "0.5.0"
+regex = "1.6.0"
 
 [[bin]]
 name = "git_extra"

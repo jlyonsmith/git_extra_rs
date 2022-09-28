@@ -1,0 +1,68 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'git_extra'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=git_extra"
+        ],
+        "filter": {
+          "name": "git_extra",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'git_extra'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=git_extra",
+          "--package=git_extra"
+        ],
+        "filter": {
+          "name": "git_extra",
+          "kind": "bin"
+        }
+      },
+      "args": [
+        "-u",
+        "-i",
+        "/Users/john/Projects/john/Spider-iOS/version.json5",
+        "incrRevision",
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'git_extra'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--package=git_extra"
+        ],
+        "filter": {
+          "name": "git_extra",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}
