@@ -39,10 +39,9 @@
         }
       },
       "args": [
-        "-u",
-        "-i",
-        "/Users/john/Projects/john/Spider-iOS/version.json5",
-        "incrRevision",
+        "quick-start",
+        "rust-cli",
+        "scratch/test_proj",
       ],
       "cwd": "${workspaceFolder}"
     },

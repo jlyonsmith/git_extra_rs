@@ -24,3 +24,9 @@ browse = !git_extra browse
 ```
 
 This will allow you to type `git browse` to browse to the repository web page.
+
+## To Do
+
+- Add a `fork` command that will fork and add `origin` and `upstream` remotes
+- Add a `set-config` command that updates local config based on a cloud based config
+- Add a `quickstart` command that creates a new repo based on the URL of a repo and which optionally runs a post `clone` cofiguration script
