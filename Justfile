@@ -94,5 +94,5 @@ release OPERATION='incrPatch':
   info "Pushing to 'origin'"
   git push --follow-tags
 
-  info "Finished release of '"$name"\' on branch '"$branch"'. You can publish the crate."
+  info "Finished release of '"$name"' on branch '"$branch"'. You can publish the crate."
   exit 0
