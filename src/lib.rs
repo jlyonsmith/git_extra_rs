@@ -66,6 +66,7 @@ struct ReposFile {
 
 #[derive(Debug, Deserialize)]
 struct RepoEntry {
+    description: Option<String>,
     origin: String,
     customizer: Option<String>,
 }
@@ -173,10 +174,24 @@ impl<'a> GitExtraTool<'a> {
 
         if list {
             if !file.repos.is_empty() {
-                let width = file.repos.keys().map(|s| s.len()).max().unwrap();
+                use colored::Colorize;
+
+                let width = file.repos.keys().map(|s| s.len()).max().unwrap() + 3;
+                let empty_string = "".to_string();
 
                 for (name, entry) in file.repos.iter() {
-                    output!(self.log, "{:width$} {}", name, entry.origin);
+                    output!(
+                        self.log,
+                        "{:width$} {}\n{:width$} {}",
+                        name,
+                        &entry.origin,
+                        "",
+                        entry
+                            .description
+                            .as_ref()
+                            .unwrap_or(&empty_string)
+                            .bright_white(),
+                    );
                 }
             }
 
