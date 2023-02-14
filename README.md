@@ -9,7 +9,7 @@ An extra useful set of Git related commands. Requires that you have [Git](https:
 
 ## Installation
 
-_The current release is only tested on macOS_.
+> The current release is only tested on macOS. In v2 the name of the executable has been changed to `git-extra` from `git_extra` so that the `git` command sees it as a new `extra` command.
 
 Download and install with:
 
