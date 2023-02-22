@@ -1,6 +1,6 @@
 # Git Extra Commands
 
-An extra useful set of Git related commands. Requires that you have [Git](https://git-scm.com) installed.  Run `git_extra` to see the full list.
+An extra useful set of Git related commands. Requires that you have [Git](https://git-scm.com) installed.  Run `git-extra` to see the full list.
 
 | Command       | Description                                                                                                                                                                                                                                                                                   |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -17,24 +17,28 @@ Download and install with:
 cargo install git_extra
 ```
 
-You can configure the commands in your `.gitconfig` configuration by running `git config --global --edit` and adding:
+## Git Configuration
+
+Because the tool is name `git-extra` if it's in your path it will show up as a new git command, e.g. you can type `git extra --help`.
+
+You can configure additioal shortcuts in your `.gitconfig` configuration by running `git config --global --edit` and adding:
 
 ```toml
 [alias]
-brw = !git_extra browse
-qst = !git_extra quick-start
+brw = !git-extra browse
+qst = !git-extra quick-start
 ```
 
-This will allow you to type `git brw` to browse to the repository web page, etc..
+This will allow you to type `git brw` or `git qst` as a shortcut.
 
 ## Quick Start
 
-The `quick-start` command does two things:
+The `quick-start` command does just two things:
 
 1. Clones a repo from a URL into a new directory
 2. Runs a customization script
 
-You can specify the URL, new directory and customization script on the command line OR, more usefully, use a shortcut name from a local `repos.tomol` file.  To do this, create a `~/.config/git_extra/repos.toml` file, then add all your favorite repo's URL's and descriptions in it. The file format is as follows:
+You can specify the URL, e.g. `https`, `ssh:` or `file:`, new directory and customization script on the command line OR, more usefully, use a shortcut name from a local `repos.tomol` file.  To do this, create a `~/.config/git_extra/repos.toml` file, then add all your favorite repo's URL's and descriptions in it. The file format is as follows:
 
 ```toml
 [rust-cli]
@@ -59,5 +63,6 @@ You can list all your saved repos with `git_extra quick-start --list`.
 
 ## To Do
 
-- Add a `fork` command that will fork and add `origin` and `upstream` remote from the command line
-- Add a `set-config` command that updates local config based on a cloud based config
+- Add `pull-request` command that creates a pull request from `origin` to `upstream`
+- Add `fork` command that will fork an `upstream` and add an `origin` from the command line
+- Add `set-config` command that updates local config based on a cloud based config
