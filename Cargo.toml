@@ -14,6 +14,7 @@ license = "Unlicense"
 clap = { version = "3.2.22", features = ["derive"] }
 colored = "2.0.0"
 duct = "0.13.6"
+easy-error = "1.0.0"
 lazy_static = "1.4.0"
 opener = "0.5.0"
 regex = "1.6.0"

@@ -3,6 +3,7 @@ mod log_macros;
 use clap::{CommandFactory, Parser, Subcommand};
 use core::fmt::Arguments;
 use duct::cmd;
+use easy_error::{self, bail, ResultExt};
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
 use serde::Deserialize;
@@ -25,6 +26,7 @@ lazy_static! {
         RegexBuilder::new("^https://([a-zA-Z0-9\\-_]+@)?(?P<domain>[a-z0-9\\-\\.]+)/(?P<user>[a-zA-Z0-9\\-_]+)/(?P<project>[a-zA-Z0-9\\-_]+)\\.git$")
             .build()
             .unwrap();
+    static ref RE_FILE: Regex = RegexBuilder::new("^file://.*$").build().unwrap();
 }
 
 const DEFAULT_PROJECT_NAME: &str = "new_project";
@@ -55,6 +57,9 @@ enum Commands {
         /// List all available named repositories in your `$HOME/.config/git_extra/repos.toml` file
         #[clap(short, long)]
         list: bool,
+        /// The name of the customization file relative to the new project directory
+        #[clap(short, long)]
+        customizer: Option<String>,
     },
 }
 
@@ -108,8 +113,9 @@ impl<'a> GitExtraTool<'a> {
                 url_or_name,
                 directory,
                 list,
+                customizer,
             } => {
-                self.quick_start(url_or_name, directory, *list)?;
+                self.quick_start(url_or_name, directory, *list, customizer)?;
             }
         }
 
@@ -169,6 +175,7 @@ impl<'a> GitExtraTool<'a> {
         opt_url_or_name: &Option<String>,
         opt_dir: &Option<String>,
         list: bool,
+        opt_customizer: &Option<String>,
     ) -> Result<(), Box<dyn Error>> {
         let file = self.read_repos_file()?;
 
@@ -199,34 +206,49 @@ impl<'a> GitExtraTool<'a> {
         }
 
         let url: String;
-        let mut customizer_name = DEFAULT_CUSTOMIZER_NAME.to_string();
+        let customizer_file_name;
 
         if let Some(arg) = opt_url_or_name {
-            if RE_SSH.is_match(arg) || RE_HTTPS.is_match(arg) {
+            if RE_SSH.is_match(arg) || RE_HTTPS.is_match(arg) || RE_FILE.is_match(arg) {
                 url = arg.to_owned();
+
+                // Customizer is command line or default
+                customizer_file_name = opt_customizer
+                    .as_ref()
+                    .map_or(DEFAULT_CUSTOMIZER_NAME.to_string(), |e| e.to_owned());
             } else if let Some(entry) = file.repos.get(arg) {
                 url = entry.origin.to_owned();
 
-                customizer_name = entry
-                    .customizer
-                    .as_ref()
-                    .map_or(customizer_name, |e| e.to_owned());
+                // Customizer is command line, file entry or default
+                customizer_file_name = opt_customizer.as_ref().map_or(
+                    entry
+                        .customizer
+                        .as_ref()
+                        .map_or(DEFAULT_CUSTOMIZER_NAME.to_string(), |e| e.to_owned()),
+                    |e| e.to_owned(),
+                );
             } else {
-                return Err(From::from(format!("Repository '{}' not found", arg)));
+                bail!("Repository '{}' not found", arg);
             }
         } else {
-            return Err(From::from(format!("Must supply a URL or name")));
+            bail!("Must supply a URL or name");
         }
 
         let new_dir_path = PathBuf::from(opt_dir.as_deref().unwrap_or(DEFAULT_PROJECT_NAME));
-        let customizer_file_path = new_dir_path.join(&customizer_name);
+        let customizer_file_path = new_dir_path.join(&customizer_file_name);
 
-        cmd!("git", "clone", url, new_dir_path.as_path()).run()?;
+        cmd!("git", "clone", url.as_str(), new_dir_path.as_path())
+            .run()
+            .context(format!("Unable to run git clone for '{}'", url.as_str()))?;
 
         if let Ok(_) = fs::File::open(&customizer_file_path) {
             cmd!(&customizer_file_path, new_dir_path.file_name().unwrap())
                 .dir(new_dir_path.as_path())
-                .run()?;
+                .run()
+                .context(format!(
+                    "Unable to run customizer file '{}'",
+                    customizer_file_path.to_string_lossy()
+                ))?;
         } else {
             warning!(
                 self.log,

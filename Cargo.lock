@@ -109,12 +109,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "easy-error"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "04cc9717c61d2908f50d16ebb5677c7e82ea2bdf7cb52f66b30fe079f3212e16"
+
+[[package]]
 name = "git_extra"
 version = "2.0.0"
 dependencies = [
  "clap",
  "colored",
  "duct",
+ "easy-error",
  "lazy_static",
  "opener",
  "regex",
