@@ -237,16 +237,20 @@ impl<'a> GitExtraTool<'a> {
         let new_dir_path = PathBuf::from(opt_dir.as_deref().unwrap_or(DEFAULT_PROJECT_NAME));
         let customizer_file_path = new_dir_path.join(&customizer_file_name);
 
+        output!(self.log, "Cloning the repo");
+
         cmd!("git", "clone", url.as_str(), new_dir_path.as_path())
             .run()
-            .context(format!("Unable to run git clone for '{}'", url.as_str()))?;
+            .context(format!("Unable to run `git clone` for '{}'", url.as_str()))?;
 
         if let Ok(_) = fs::File::open(&customizer_file_path) {
+            output!(self.log, "Running the customization script");
+
             cmd!(&customizer_file_path, new_dir_path.file_name().unwrap())
                 .dir(new_dir_path.as_path())
                 .run()
                 .context(format!(
-                    "Unable to run customizer file '{}'",
+                    "There was a problem running customizer file '{}'",
                     customizer_file_path.to_string_lossy()
                 ))?;
         } else {
