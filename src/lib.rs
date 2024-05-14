@@ -29,7 +29,6 @@ lazy_static! {
     static ref RE_FILE: Regex = RegexBuilder::new("^file://.*$").build().unwrap();
 }
 
-const DEFAULT_PROJECT_NAME: &str = "new_project";
 const DEFAULT_CUSTOMIZER_NAME: &str = "customizer";
 
 /// The git_extra CLI
@@ -48,15 +47,27 @@ enum Commands {
         #[clap(long)]
         origin: Option<String>,
     },
-    /// Quickly start a project by cloning a repo and running a customization script
+    /// Commands to quickly start projects
     QuickStart {
-        /// A name or URL of a Git repository to clone
-        url_or_name: Option<String>,
-        /// Name of the directory to clone the repo into
-        directory: Option<String>,
-        /// List all available named repositories in your `$HOME/.config/git_extra/repos.toml` file
+        /// Quick start sub-commands
+        #[clap(subcommand)]
+        quick_start: QuickStartCommands,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum QuickStartCommands {
+    /// List all available named repositories in your `$HOME/.config/git_extra/repos.toml`
+    List {
         #[clap(short, long)]
         list: bool,
+    },
+    /// Create a new project by cloning a repo and running a customization script
+    Create {
+        /// A name or URL of a Git repository to clone
+        url_or_name: String,
+        /// Name of the directory to clone the repo into
+        directory: String,
         /// The name of the customization file relative to the new project directory
         #[clap(short, long)]
         customizer: Option<String>,
@@ -109,14 +120,18 @@ impl<'a> GitExtraTool<'a> {
             Commands::Browse { origin } => {
                 self.browse_to_remote(&origin)?;
             }
-            Commands::QuickStart {
-                url_or_name,
-                directory,
-                list,
-                customizer,
-            } => {
-                self.quick_start(url_or_name, directory, *list, customizer)?;
-            }
+            Commands::QuickStart { quick_start } => match quick_start {
+                QuickStartCommands::List { list: _ } => {
+                    self.quick_start_list()?;
+                }
+                QuickStartCommands::Create {
+                    url_or_name,
+                    directory,
+                    customizer,
+                } => {
+                    self.quick_start_create(url_or_name, directory, customizer)?;
+                }
+            },
         }
 
         Ok(())
@@ -170,71 +185,70 @@ impl<'a> GitExtraTool<'a> {
         }
     }
 
-    fn quick_start(
+    fn quick_start_list(self: &Self) -> Result<(), Box<dyn Error>> {
+        let file = self.read_repos_file()?;
+
+        if !file.repos.is_empty() {
+            use colored::Colorize;
+
+            let width = file.repos.keys().map(|s| s.len()).max().unwrap() + 3;
+            let empty_string = "".to_string();
+
+            for (name, entry) in file.repos.iter() {
+                output!(
+                    self.log,
+                    "{:width$} {}\n{:width$} {}",
+                    name,
+                    &entry.origin,
+                    "",
+                    entry
+                        .description
+                        .as_ref()
+                        .unwrap_or(&empty_string)
+                        .bright_white(),
+                );
+            }
+        }
+
+        Ok(())
+    }
+
+    fn quick_start_create(
         self: &Self,
-        opt_url_or_name: &Option<String>,
-        opt_dir: &Option<String>,
-        list: bool,
+        opt_url_or_name: &String,
+        opt_dir: &String,
         opt_customizer: &Option<String>,
     ) -> Result<(), Box<dyn Error>> {
         let file = self.read_repos_file()?;
-
-        if list {
-            if !file.repos.is_empty() {
-                use colored::Colorize;
-
-                let width = file.repos.keys().map(|s| s.len()).max().unwrap() + 3;
-                let empty_string = "".to_string();
-
-                for (name, entry) in file.repos.iter() {
-                    output!(
-                        self.log,
-                        "{:width$} {}\n{:width$} {}",
-                        name,
-                        &entry.origin,
-                        "",
-                        entry
-                            .description
-                            .as_ref()
-                            .unwrap_or(&empty_string)
-                            .bright_white(),
-                    );
-                }
-            }
-
-            return Ok(());
-        }
-
         let url: String;
         let customizer_file_name;
 
-        if let Some(arg) = opt_url_or_name {
-            if RE_SSH.is_match(arg) || RE_HTTPS.is_match(arg) || RE_FILE.is_match(arg) {
-                url = arg.to_owned();
+        if RE_SSH.is_match(opt_url_or_name)
+            || RE_HTTPS.is_match(opt_url_or_name)
+            || RE_FILE.is_match(opt_url_or_name)
+        {
+            url = opt_url_or_name.to_owned();
 
-                // Customizer is command line or default
-                customizer_file_name = opt_customizer
+            // Customizer is command line or default
+            customizer_file_name = opt_customizer
+                .as_ref()
+                .map_or(DEFAULT_CUSTOMIZER_NAME.to_string(), |e| e.to_owned());
+        } else if let Some(entry) = file.repos.get(opt_url_or_name) {
+            url = entry.origin.to_owned();
+
+            // Customizer is command line, file entry or default
+            customizer_file_name = opt_customizer.as_ref().map_or(
+                entry
+                    .customizer
                     .as_ref()
-                    .map_or(DEFAULT_CUSTOMIZER_NAME.to_string(), |e| e.to_owned());
-            } else if let Some(entry) = file.repos.get(arg) {
-                url = entry.origin.to_owned();
-
-                // Customizer is command line, file entry or default
-                customizer_file_name = opt_customizer.as_ref().map_or(
-                    entry
-                        .customizer
-                        .as_ref()
-                        .map_or(DEFAULT_CUSTOMIZER_NAME.to_string(), |e| e.to_owned()),
-                    |e| e.to_owned(),
-                );
-            } else {
-                bail!("Repository '{}' not found", arg);
-            }
+                    .map_or(DEFAULT_CUSTOMIZER_NAME.to_string(), |e| e.to_owned()),
+                |e| e.to_owned(),
+            );
         } else {
-            bail!("Must supply a URL or name");
+            bail!("Repository '{}' not found", opt_url_or_name);
         }
 
-        let new_dir_path = PathBuf::from(opt_dir.as_deref().unwrap_or(DEFAULT_PROJECT_NAME));
+        let new_dir_path = PathBuf::from(opt_dir);
         let customizer_file_path = new_dir_path.join(&customizer_file_name);
 
         output!(self.log, "Cloning the repo");
