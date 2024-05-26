@@ -1,6 +1,6 @@
 [package]
 name = "git_extra"
-version = "2.1.1"
+version = "3.0.0"
 edition = "2021"
 authors = ["John Lyon-Smith <john@lyon-smith.org>"]
 readme = "README.md"
