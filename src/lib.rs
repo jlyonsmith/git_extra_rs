@@ -29,7 +29,7 @@ lazy_static! {
     static ref RE_FILE: Regex = RegexBuilder::new("^file://.*$").build().unwrap();
 }
 
-const DEFAULT_CUSTOMIZER_NAME: &str = "customizer";
+const DEFAULT_CUSTOMIZER_NAME: &str = "customize.ts";
 
 /// The git_extra CLI
 #[derive(Debug, Parser)]
@@ -98,7 +98,7 @@ pub struct GitExtraTool<'a> {
 }
 
 impl<'a> GitExtraTool<'a> {
-    pub fn new(log: &'a dyn GitExtraLog) -> GitExtraTool {
+    pub fn new(log: &'a dyn GitExtraLog) -> GitExtraTool<'a> {
         GitExtraTool { log }
     }
 
@@ -221,18 +221,14 @@ impl<'a> GitExtraTool<'a> {
     ) -> Result<(), Box<dyn Error>> {
         let file = self.read_repos_file()?;
         let url: String;
-        let customizer_file_name;
 
-        if RE_SSH.is_match(opt_url_or_name)
-            || RE_HTTPS.is_match(opt_url_or_name)
-            || RE_FILE.is_match(opt_url_or_name)
-        {
+        // Customizer is command line or default
+        let mut customizer_file_name = String::new();
+
+        if RE_SSH.is_match(opt_url_or_name) || RE_HTTPS.is_match(opt_url_or_name) {
             url = opt_url_or_name.to_owned();
-
-            // Customizer is command line or default
-            customizer_file_name = opt_customizer
-                .as_ref()
-                .map_or(DEFAULT_CUSTOMIZER_NAME.to_string(), |e| e.to_owned());
+        } else if RE_FILE.is_match(opt_url_or_name) {
+            url = opt_url_or_name.clone().split_off("file://".len());
         } else if let Some(entry) = file.repos.get(opt_url_or_name) {
             url = entry.origin.to_owned();
 
@@ -245,13 +241,20 @@ impl<'a> GitExtraTool<'a> {
                 |e| e.to_owned(),
             );
         } else {
-            bail!("Repository '{}' not found", opt_url_or_name);
+            bail!(
+                "Repository name '{}' must start with https://, git@ or file://",
+                opt_url_or_name
+            );
+        }
+
+        if customizer_file_name.is_empty() {
+            customizer_file_name = opt_customizer
+                .as_ref()
+                .map_or(DEFAULT_CUSTOMIZER_NAME.to_string(), |e| e.to_owned());
         }
 
         let new_dir_path = PathBuf::from(opt_dir);
         let customizer_file_path = new_dir_path.join(&customizer_file_name);
-
-        output!(self.log, "Cloning the repo");
 
         cmd!("git", "clone", url.as_str(), new_dir_path.as_path())
             .run()

@@ -26,42 +26,26 @@
     {
       "type": "lldb",
       "request": "launch",
-      "name": "Debug executable 'git_extra'",
+      "name": "Debug executable 'git-extra'",
       "cargo": {
         "args": [
           "build",
-          "--bin=git_extra",
+          "--bin=git-extra",
           "--package=git_extra"
         ],
         "filter": {
-          "name": "git_extra",
+          "name": "git-extra",
           "kind": "bin"
         }
       },
+      "program": "${workspaceFolder}/target/debug/git-extra",
       "args": [
         "quick-start",
-        "rust-cli",
+        "create",
+        "file://../rust_cli_quickstart",
         "scratch/test_proj",
       ],
       "cwd": "${workspaceFolder}"
     },
-    {
-      "type": "lldb",
-      "request": "launch",
-      "name": "Debug unit tests in executable 'git_extra'",
-      "cargo": {
-        "args": [
-          "test",
-          "--no-run",
-          "--package=git_extra"
-        ],
-        "filter": {
-          "name": "git_extra",
-          "kind": "lib"
-        }
-      },
-      "args": [],
-      "cwd": "${workspaceFolder}"
-    }
   ]
 }
